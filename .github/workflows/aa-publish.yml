@@ -19,6 +19,12 @@ jobs:
       LLM_BASE_URL: ${{ vars.LLM_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta/openai' }}
       LLM_MODEL: ${{ vars.LLM_MODEL || 'gemini-2.5-flash' }}
       LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+      IMAGE_API_KEY: ${{ secrets.IMAGE_API_KEY || secrets.LLM_API_KEY }}
+      HF_API_KEY_ID: ${{ secrets.HF_API_KEY_ID }}
+      HF_API_KEY_SECRET: ${{ secrets.HF_API_KEY_SECRET }}
+      HF_VIDEO_MODEL: ${{ vars.HF_VIDEO_MODEL || '/kling-video/v2.5-turbo/standard/image-to-video' }}
+      HF_REELS_PER_DAY: ${{ vars.HF_REELS_PER_DAY || '4' }}
+      IMAGE_MODEL: ${{ vars.IMAGE_MODEL || 'gemini-2.5-flash-image' }}
       GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
       DRIVE_FOLDER_ID: ${{ vars.DRIVE_FOLDER_ID || '1uQmVcdSeZFCs_HbNkWQJdQVKhpm7bTd7' }}
       DRIVE_PER_DAY: ${{ vars.DRIVE_PER_DAY || '8' }}
