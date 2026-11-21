@@ -5,14 +5,14 @@
 const HOURS_AHEAD = 24;
 
 const PILLARS = {
-  ielts_mistakes: { w: 3, brief: 'IELTS mistake series. One common mistake, why it costs band score, the exact fix. Label the series as "IELTS Mistakes, Part N" / "IELTS ভুল, পর্ব N" (never use the # symbol).', url: { en: 'admissionarena.com/tools/ielts-writing-checker', bn: 'admissionarena.com/bn/ielts' } },
-  ielts_tips: { w: 3, brief: 'One practical IELTS technique (Reading, Writing, Listening or Speaking) a student can use today. CTA goes to the free Reading/Writing practice test. Never mention a "full mock test".', url: { en: 'admissionarena.com/tools/ielts-writing-practice-test', bn: 'admissionarena.com/bn/ielts' } },
-  visa_prep: { w: 2, brief: 'Student visa interview prep: US F-1 or UK credibility interview. One question officers ask, what weak answers look like, what a credible answer contains. Point to the AI visa interview practice.', url: { en: 'admissionarena.com/visa-prep', bn: 'admissionarena.com/visa-prep' } },
-  destinations: { w: 2, brief: 'One rarely-changing fact or decision framework about studying in one of: USA, UK, Canada, Australia, Germany, Japan, China, Malaysia, Türkiye, Malta, Cyprus. No fees, deadlines or numbers that change yearly.', url: { en: 'admissionarena.com/tools', bn: 'admissionarena.com/bn/tools' } },
-  tools: { w: 2, brief: 'Spotlight ONE free AdmissionArena tool and the problem it solves in 30 seconds. Pick from: Admission Chance Calculator, Cost of Studying Abroad Calculator, Scholarship Eligibility Checker, IELTS Band Score Calculator, CGPA to Percentage, Cheapest Universities finder.', url: { en: 'admissionarena.com/tools', bn: 'admissionarena.com/bn/tools' } },
-  creators: { w: 2, brief: 'Recruit content creators (students, teachers, study-abroad creators) to the free AdmissionArena Creator Program: free to join, earn 40% commission on paid IELTS plans their audience buys. Mention only "40%", never per-sale money amounts. Address individual creators, not institutes.', url: { en: 'admissionarena.com/creators', bn: 'admissionarena.com/creators' } },
-  trust: { w: 1, brief: 'Why students and parents can trust AdmissionArena: source-backed data, honest advice, no false promises, transparent costs. Brand promise: "Serve with love. Grow with integrity."', url: { en: 'admissionarena.com/about', bn: 'admissionarena.com/about' } },
-  service: { w: 1, brief: 'Free expert guidance: what to bring to a study-abroad consultation and what a good advisor should tell you. Invite them to book.', url: { en: 'admissionarena.com/#consultation', bn: 'admissionarena.com/#consultation' } },
+  ielts_mistakes: { w: 3, brief: 'IELTS mistake series. One common mistake, why it costs band score, the exact fix. Label the series as "IELTS Mistakes, Part N" / "IELTS ভুল, পর্ব N" (never use the # symbol).', url: { en: '/tools/ielts-writing-checker', bn: '/bn/tools/ielts-writing-checker' } },
+  ielts_tips: { w: 3, brief: 'One practical IELTS technique (Reading, Writing, Listening or Speaking) a student can use today. CTA goes to the free Reading/Writing practice test. Never mention a "full mock test".', url: { en: '/tools/ielts-writing-practice-test', bn: '/bn/tools/ielts-writing-practice-test' } },
+  visa_prep: { w: 2, brief: 'Student visa interview prep: US F-1 or UK credibility interview. One question officers ask, what weak answers look like, what a credible answer contains. Point to the AI visa interview practice.', url: { en: '/visa-prep', bn: '/bn/visa-prep' } },
+  destinations: { w: 2, brief: 'One rarely-changing fact or decision framework about studying in one of: USA, UK, Canada, Australia, Germany, Japan, China, Malaysia, Türkiye, Malta, Cyprus. No fees, deadlines or numbers that change yearly.', url: { en: '/tools', bn: '/bn/tools' } },
+  tools: { w: 2, brief: 'Spotlight ONE free AdmissionArena tool and the problem it solves in 30 seconds. Pick from: Admission Chance Calculator, Cost of Studying Abroad Calculator, Scholarship Eligibility Checker, IELTS Band Score Calculator, CGPA to Percentage, Cheapest Universities finder.', url: { en: '/tools', bn: '/bn/tools' } },
+  creators: { w: 2, brief: 'Recruit content creators (students, teachers, study-abroad creators) to the free AdmissionArena Creator Program: free to join, earn 40% commission on paid IELTS plans their audience buys. Mention only "40%", never per-sale money amounts. Address individual creators, not institutes.', url: { en: '/creators', bn: '/bn/creators' } },
+  trust: { w: 1, brief: 'Why students and parents can trust AdmissionArena: source-backed data, honest advice, no false promises, transparent costs. Brand promise: "Serve with love. Grow with integrity."', url: { en: '/about', bn: '/bn/about' } },
+  service: { w: 1, brief: 'Free expert guidance: what to bring to a study-abroad consultation and what a good advisor should tell you. Invite them to book.', url: { en: '/contact', bn: '/bn/contact' } },
 };
 
 const VOICE = `You write social posts for AdmissionArena (admissionarena.com): IELTS practice with AI feedback, visa interview practice, free study-abroad tools and expert guidance for students in Bangladesh, South Asia and Africa.
@@ -64,10 +64,13 @@ async function llm(messages) {
 
 function buildPrompt(lang, specs, recentHooks) {
   const langName = lang === 'bn' ? 'Bangla' : 'English';
-  const lines = specs.map((s, i) => `${i + 1}. slot=${s.slot} pillar=${s.pillar} format=${s.format}\n   brief: ${PILLARS[s.pillar].brief}\n   link: ${PILLARS[s.pillar].url[lang]}`);
+  const lines = specs.map((s, i) => `${i + 1}. slot=${s.slot} pillar=${s.pillar} format=${s.format}\n   brief: ${PILLARS[s.pillar].brief}\n   default link: ${SITE}${PILLARS[s.pillar].url[lang]}`);
   return `Write ${specs.length} ${langName} posts, one per line item below.
 
 ${lines.join('\n')}
+
+LINKS: every post ends with ONE link, the page most relevant to that exact post (a Germany post links the Germany guide, a scholarship post links the scholarship checker). Choose ONLY from this list, copy it exactly:
+${linkMenu(lang)}
 
 Do NOT repeat these recent hooks:
 ${recentHooks.slice(0, 60).map((h) => '- ' + h).join('\n') || '- (none)'}
@@ -81,7 +84,11 @@ Return ONLY a JSON array, one object per item, same order:
   "points": ["static only: exactly 3 items, max 8 words each"],
   "slides": [{"text": "reel only: max 9 words", "sub": "optional, max 14 words"}],
   "cta": "max 5 words",
-  "caption": "60-140 words. Line 1 = hook. Short lines. Real value. End with the CTA and the link above.",
+  "highlight": "2 to 4 words copied exactly from the headline (static) or slide 1 (reel) to colour gold: the most important words",
+  "motion_prompt": "reel only: one short sentence of natural movement for the photo as a 5-second video clip (e.g. 'she looks up from her notes and smiles, slow camera push-in')",
+  "image_prompt": "one sentence describing a realistic photo for this post: young Bangladeshi/South Asian student(s) in a scene that matches the topic (e.g. studying IELTS at a desk, passport at an airport, on a German campus, graduation). No text in the image.",
+  "link": "the single most relevant link from the LINKS list, copied exactly",
+  "caption": "60-140 words. Line 1 = hook. Short lines. Real value. End with the CTA (the link is added automatically).",
   "hashtags": ["3 to 5 words without #"]
 }
 For reels: 4 to 6 slides. Slide 1 is the hook. Last slide is the CTA. Each slide one thought.`;
@@ -89,10 +96,14 @@ For reels: 4 to 6 slides. Slide 1 is the hook. Last slide is the CTA. Each slide
 
 function normalise(item, spec, lang) {
   const x = deepStrip(item || {});
-  const url = PILLARS[spec.pillar].url[lang];
+  const link = allowedLink(lang, x.link) || SITE + PILLARS[spec.pillar].url[lang];
+  const url = link.replace(/^https:\/\//, '');
   const payload = {
     lang, eyebrow: String(x.eyebrow || '').slice(0, 40), cta: String(x.cta || '').slice(0, 40), url,
+    highlight: String(x.highlight || '').slice(0, 60),
+    image_prompt: String(x.image_prompt || '').slice(0, 400),
   };
+  if (spec.format === 'reel' && spec.motion) { payload.motion = true; payload.motion_prompt = String(x.motion_prompt || '').slice(0, 300); }
   if (spec.format === 'static') {
     payload.headline = String(x.headline || x.hook || '').slice(0, 120);
     payload.points = (Array.isArray(x.points) ? x.points : []).slice(0, 3).map((p) => String(p).slice(0, 70));
@@ -101,8 +112,7 @@ function normalise(item, spec, lang) {
       .map((s) => ({ text: String(s.text || '').slice(0, 90), sub: s.sub ? String(s.sub).slice(0, 120) : undefined }))
       .filter((s) => s.text);
   }
-  let caption = String(x.caption || '').trim();
-  if (caption && !caption.includes('admissionarena.com')) caption += `\n\n${url}`;
+  const caption = String(x.caption || '').trim() ? setCaptionLink(x.caption, link) : '';
   return {
     slot_at: spec.slot, lang, format: spec.format, pillar: spec.pillar,
     hook: String(x.hook || payload.headline || '').slice(0, 140),
@@ -136,6 +146,24 @@ recent.forEach((r) => (pillarCountRecent[r.pillar] = (pillarCountRecent[r.pillar
 const cycle = weightedPillarCycle();
 const results = { created: 0, rejected: [], posts: 0, langs: {} };
 
+// Higgsfield video intros: only a few reels per language per Dhaka day (each clip costs credits).
+const HF_PER_DAY = Number($env.HF_REELS_PER_DAY || 4);
+const dDay = (t) => new Date(new Date(t).getTime() + 6 * 3600e3).toISOString().slice(0, 10);
+const motionUsed = {};
+if (HF_PER_DAY > 0 && $env.HF_API_KEY_ID) {
+  const m = await sb('GET', `aa_content?select=slot_at,lang&payload->>motion=eq.true&slot_at=gte.${new Date(Date.now() - 86400e3).toISOString()}`);
+  m.forEach((r) => { const k = `${r.lang}|${dDay(r.slot_at)}`; motionUsed[k] = (motionUsed[k] || 0) + 1; });
+}
+function takeMotion(lang, slot) {
+  if (!(HF_PER_DAY > 0 && $env.HF_API_KEY_ID)) return false;
+  const dh = (new Date(slot).getUTCHours() + 6) % 24;
+  if (dh < 9 || dh > 23) return false; // spend clips on busy hours
+  const k = `${lang}|${dDay(slot)}`;
+  if ((motionUsed[k] || 0) >= HF_PER_DAY) return false;
+  motionUsed[k] = (motionUsed[k] || 0) + 1;
+  return true;
+}
+
 const jobs = [];
 for (const lang of langs) {
   const missing = slots.filter((s) => !have.has(`${lang}|${s.toISOString()}`));
@@ -144,7 +172,7 @@ for (const lang of langs) {
   const specs = missing.map((s, i) => {
     const h = s.getUTCHours();
     const reel = ENV.REEL_RATIO >= 1 ? true : ENV.REEL_RATIO <= 0 ? false : ((h + (lang === 'bn' ? 1 : 0)) % Math.round(1 / ENV.REEL_RATIO) === 0);
-    return { slot: s.toISOString(), pillar: cycle[(offset + i) % cycle.length], format: reel ? 'reel' : 'static' };
+    return { slot: s.toISOString(), pillar: cycle[(offset + i) % cycle.length], format: reel ? 'reel' : 'static', motion: reel && takeMotion(lang, s.toISOString()) };
   });
   const hooks = recent.filter((r) => r.lang === lang).map((r) => r.hook);
   for (let i = 0; i < specs.length; i += 8) jobs.push({ lang, specs: specs.slice(i, i + 8), hooks });
