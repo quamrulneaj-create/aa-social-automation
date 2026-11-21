@@ -1,0 +1,67 @@
+name: AA content (every 6 hours)
+on:
+  schedule:
+    - cron: '15 */6 * * *'
+  workflow_dispatch:
+concurrency:
+  group: aa-content
+  cancel-in-progress: false
+permissions:
+  contents: write
+jobs:
+  content:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      SUPABASE_URL: ${{ vars.SUPABASE_URL || 'https://kwqyqklvvfwnrtkqruex.supabase.co' }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+      STORAGE_BUCKET: aa-media
+      LLM_BASE_URL: ${{ vars.LLM_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta/openai' }}
+      LLM_MODEL: ${{ vars.LLM_MODEL || 'gemini-2.5-flash' }}
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+      DRIVE_FOLDER_ID: ${{ vars.DRIVE_FOLDER_ID || '1uQmVcdSeZFCs_HbNkWQJdQVKhpm7bTd7' }}
+      DRIVE_PER_DAY: ${{ vars.DRIVE_PER_DAY || '8' }}
+      DRIVE_PLATFORMS: ${{ vars.DRIVE_PLATFORMS || 'facebook' }}
+      AA_REEL_RATIO: ${{ vars.AA_REEL_RATIO || '0.5' }}
+      AA_DRY_RUN: ${{ vars.AA_DRY_RUN || 'true' }}
+      TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
+      TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
+      TIKTOK_PRIVACY: ${{ vars.TIKTOK_PRIVACY || 'SELF_ONLY' }}
+      YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+      YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+      YT_PRIVACY: ${{ vars.YT_PRIVACY || 'private' }}
+      YT_SOURCE: ${{ vars.YT_SOURCE || 'drive' }}
+    steps:
+      - name: Check settings
+        if: env.SUPABASE_SERVICE_KEY == ''
+        run: echo "Not set up yet - add the SUPABASE_SERVICE_KEY secret. Skipping."
+      - uses: actions/checkout@v4
+        if: env.SUPABASE_SERVICE_KEY != ''
+      - uses: actions/setup-node@v4
+        if: env.SUPABASE_SERVICE_KEY != ''
+        with:
+          node-version: 22
+      - name: Fonts and video tools
+        if: env.SUPABASE_SERVICE_KEY != ''
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg fonts-noto-core fonts-inter > /dev/null
+      - uses: actions/cache@v4
+        if: env.SUPABASE_SERVICE_KEY != ''
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-1.63.0
+      - name: Install
+        if: env.SUPABASE_SERVICE_KEY != ''
+        run: npm install --no-audit --no-fund && npx playwright install --with-deps chromium
+      - name: Write AI posts, queue Drive reels, clean old media
+        if: env.SUPABASE_SERVICE_KEY != ''
+        run: node run.js content
+      - name: Keep the schedule alive (GitHub pauses schedules after 60 quiet days)
+        if: env.SUPABASE_SERVICE_KEY != ''
+        run: |
+          f=.github/last-run; now=$(date +%s); last=$(cat $f 2>/dev/null || echo 0)
+          if [ $((now-last)) -gt 604800 ]; then
+            echo $now > $f
+            git config user.name "aa-bot"; git config user.email "aa-bot@users.noreply.github.com"
+            git add $f && git commit -m "keepalive" && git push
+          fi
