@@ -1,0 +1,8 @@
+{
+  "name": "aa-social-automation",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AdmissionArena social media automation: AI reels + statics, Drive reels, posting to Facebook, Instagram, TikTok, YouTube",
+  "scripts": { "content": "node run.js content", "publish": "node run.js publish" },
+  "dependencies": { "playwright": "1.63.0" }
+}
