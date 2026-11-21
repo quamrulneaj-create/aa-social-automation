@@ -89,13 +89,14 @@ The images are frames from the video. Read the on-screen text to understand the 
 Write the Facebook caption in ${langName}.
 Voice: Alex Hormozi meets Steve Jobs. First line is a hook that challenges what most students believe. One idea. Short lines. Give real value. Calm confidence, no hype.
 Rules: no emoji. Never use guarantee, guaranteed, 100%, #1, number one, sure chance, nishchit, নিশ্চিত, গ্যারান্টি, শতভাগ, "full mock test". No promises of scores, visas or admission. No invented statistics. If it is about the Creator Program, mention only "40%" commission, never money amounts.
-End with one clear call to action and the most relevant link: admissionarena.com/ielts, admissionarena.com/visa-prep, admissionarena.com/tools, admissionarena.com/creators, or admissionarena.com.
+End with one clear call to action. Pick the ONE page most relevant to this exact video (a Germany video gets the Germany guide, a visa documents video gets the document checklist). Choose ONLY from this list and copy it exactly:
+${linkMenu(lang)}
 
 ${candidates.length ? `
 These videos are ALREADY on our Facebook pages and have about the same length. Compare their captions with this video's on-screen text. If this is the same video (same topic and same script), list its channel keys in already_posted_on; if not sure, leave it empty.
 ${candidates.map((c) => `- channel=${c.channel} id=${c.id}: ${c.text}`).join('\n')}
 ` : ''}
-Return ONLY JSON: {"already_posted_on": ["channel keys or empty"], "video_language": "en" | "bn" | "unsure", "pillar": "ielts_mistakes|ielts_tips|visa_prep|destinations|tools|creators|trust|service", "hook": "max 12 words", "caption": "50-120 words", "hashtags": ["3 to 5 words without #"]}`;
+Return ONLY JSON: {"already_posted_on": ["channel keys or empty"], "video_language": "en" | "bn" | "unsure", "pillar": "ielts_mistakes|ielts_tips|visa_prep|destinations|tools|creators|trust|service", "hook": "max 12 words", "link": "one link from the list, exact", "caption": "50-120 words (the link is added automatically)", "hashtags": ["3 to 5 words without #"]}`;
   const body = await call({
     method: 'POST', url: `${ENV.LLM_BASE_URL}/chat/completions`, timeout: 180000,
     headers: { Authorization: `Bearer ${ENV.LLM_API_KEY}`, 'Content-Type': 'application/json', 'X-Title': 'AdmissionArena Drive Reels' },
@@ -186,11 +187,11 @@ for (const lang of ['en', 'bn']) {
       const row = {
         slot_at: slots[si], lang, format: 'reel', pillar: cap.pillar || 'trust', hook: String(cap.hook || f.name).slice(0, 140),
         payload: { lang, source: 'drive', frames: media.frames, duration: media.duration },
-        caption: String(cap.caption || '').trim(),
+        caption: setCaptionLink(cap.caption, allowedLink(lang, cap.link) || HOME[lang]),
         hashtags: (cap.hashtags || []).slice(0, 5).map((h) => String(h).replace(/[#\s]/g, '')).filter(Boolean),
         media_url: media.url, status: 'rendered', source: 'drive', source_id: f.id, source_name: f.name,
       };
-      if (row.caption.length < 30) throw new Error('caption too short');
+      if (String(cap.caption || '').trim().length < 30) throw new Error('caption too short');
       const hits = bannedHits({ c: row.caption, h: row.hashtags, k: row.hook });
       if (hits.length) throw new Error('caption has banned words: ' + hits.join(', '));
       const targets = channels.filter((ch) => ch.lang === lang && !postedOn.includes(ch.key) && ch.platform !== 'youtube');
